@@ -1,13 +1,11 @@
-# for F22 and F23 ghc-7.8.4, override to high "make -j" to preserve ABI hashes
-# - set < 9 at our own risk
-# (-j9 seems sufficent but to be safe use -j12)
-%global build_minimum_smp 12
-
 # To bootstrap build a new version of ghc:
-#%%global ghc_bootstrapping 1
+%global ghc_bootstrapping 0
+
+%global without_testsuite 1
+
+%global ghc_name ghc784
 
 %if %{defined ghc_bootstrapping}
-%global without_testsuite 1
 %global without_prof 1
 %if 0%{?fedora} >= 22
 %{?ghc_bootstrap}
@@ -27,7 +25,7 @@
 %global space %(echo -n ' ')
 %global BSDHaskellReport BSD%{space}and%{space}HaskellReport
 
-Name: ghc
+Name: %{ghc_name}
 # part of haskell-platform
 # ghc must be rebuilt after a version bump to avoid ABI change problems
 Version: 7.8.4
@@ -36,7 +34,7 @@ Version: 7.8.4
 #   (sometimes after a major release)
 # - minor release numbers for a branch should be incremented monotonically
 # xhtml moved from haskell-platform to ghc-7.8.3
-Release: 42%{?dist}
+Release: 1%{?dist}
 Summary: Glasgow Haskell Compiler
 
 License: %BSDHaskellReport
@@ -94,13 +92,6 @@ Patch25: ghc-7.8-arm7_saner-linker-opt-handling-9873.patch
 # and retired arches: alpha sparcv9 armv5tel
 # see ghc_arches defined in /etc/rpm/macros.ghc-srpm by redhat-rpm-macros
 ExcludeArch: sparc64
-Obsoletes: ghc-dph-base < 0.5, ghc-dph-base-devel < 0.5, ghc-dph-base-prof < 0.5
-Obsoletes: ghc-dph-par < 0.5, ghc-dph-par-devel < 0.5, ghc-dph-par-prof < 0.5
-Obsoletes: ghc-dph-prim-interface < 0.5, ghc-dph-prim-interface-devel < 0.5, ghc-dph-interface-prim-prof < 0.5
-Obsoletes: ghc-dph-prim-par < 0.5, ghc-dph-prim-par-devel < 0.5, ghc-dph-prim-par-prof < 0.5
-Obsoletes: ghc-dph-prim-seq < 0.5, ghc-dph-prim-seq-devel < 0.5, ghc-dph-prim-seq-prof < 0.5
-Obsoletes: ghc-dph-seq < 0.5, ghc-dph-seq-devel < 0.5, ghc-dph-seq-prof < 0.5
-Obsoletes: ghc-feldspar-language < 0.4, ghc-feldspar-language-devel < 0.4, ghc-feldspar-language-prof < 0.4
 %if %{undefined ghc_bootstrapping}
 BuildRequires: ghc-compiler = %{version}
 %endif
@@ -135,12 +126,12 @@ BuildRequires: llvm
 # patch22 and patch24
 BuildRequires: autoconf, automake
 %endif
-Requires: ghc-compiler = %{version}-%{release}
+Requires: %{name}-compiler = %{version}-%{release}
 %if %{undefined without_haddock}
-Requires: ghc-doc-index = %{version}-%{release}
+Requires: %{name}-doc-index = %{version}-%{release}
 %endif
-Requires: ghc-libraries = %{version}-%{release}
-Requires: ghc-ghc-devel = %{version}-%{release}
+Requires: %{name}-libraries = %{version}-%{release}
+Requires: %{name}-ghc-devel = %{version}-%{release}
 
 %description
 GHC is a state-of-the-art, open source, compiler and interactive environment
@@ -166,12 +157,11 @@ for the functional language Haskell. Highlights:
 Summary: GHC compiler and utilities
 License: BSD
 Requires: gcc%{?_isa}
-Requires: ghc-base-devel%{?_isa}
+Requires: %{name}-base-devel%{?_isa}
 # for alternatives
 Requires(post): chkconfig
 Requires(postun): chkconfig
 # added in f14
-Obsoletes: ghc-doc < 6.12.3-4
 %ifarch armv7hl armv5tel
 Requires: llvm34
 %endif
@@ -187,7 +177,7 @@ install the main ghc package.
 %package doc-index
 Summary: GHC library development documentation indexing
 License: BSD
-Requires: ghc-compiler = %{version}-%{release}
+Requires: %{name}-compiler = %{version}-%{release}
 Requires: crontabs
 
 %description doc-index
@@ -206,7 +196,7 @@ documention.
 %global __find_requires %{_rpmconfigdir}/ghc-deps.sh --requires %{buildroot}%{ghclibdir}
 %endif
 
-%global ghc_pkg_c_deps ghc-compiler = %{ghc_version_override}-%{release}
+%global ghc_pkg_c_deps %{name}-compiler = %{ghc_version_override}-%{release}
 
 %if %{defined ghclibdir}
 %ghc_lib_subpackage Cabal %{Cabal_ver}
@@ -218,10 +208,8 @@ documention.
 %ghc_lib_subpackage -l %BSDHaskellReport deepseq %{deepseq_ver}
 %ghc_lib_subpackage -l %BSDHaskellReport directory %{directory_ver}
 %ghc_lib_subpackage filepath %{filepath_ver}
-%define ghc_pkg_obsoletes ghc-bin-package-db-devel < 0.0.0.0-12
 # in ghc not ghc-libraries:
 %ghc_lib_subpackage -x ghc %{ghc_version_override}
-%undefine ghc_pkg_obsoletes
 %ghc_lib_subpackage haskeline %{haskeline_ver}
 %ghc_lib_subpackage -l HaskellReport haskell2010 %{haskell2010_ver}
 %ghc_lib_subpackage -l HaskellReport haskell98 %{haskell98_ver}
@@ -230,9 +218,7 @@ documention.
 %ghc_lib_subpackage -l %BSDHaskellReport old-locale %{old_locale_ver}
 %ghc_lib_subpackage -l %BSDHaskellReport old-time %{old_time_ver}
 %ghc_lib_subpackage pretty %{pretty_ver}
-%define ghc_pkg_obsoletes ghc-process-leksah-devel < 1.0.1.4-14
 %ghc_lib_subpackage -l %BSDHaskellReport process %{process_ver}
-%undefine ghc_pkg_obsoletes
 %ghc_lib_subpackage template-haskell %{template_haskell_ver}
 %ghc_lib_subpackage -c ncurses-devel%{?_isa} terminfo %{terminfo_ver}
 %ghc_lib_subpackage time %{time_ver}
@@ -246,14 +232,8 @@ documention.
 %package libraries
 Summary: GHC development libraries meta package
 License: %BSDHaskellReport
-Requires: ghc-compiler = %{version}-%{release}
-Obsoletes: ghc-devel < %{version}-%{release}
-Provides: ghc-devel = %{version}-%{release}
-Obsoletes: ghc-prof < %{version}-%{release}
-Provides: ghc-prof = %{version}-%{release}
-# since f15
-Obsoletes: ghc-libs < 7.0.1-3
-%{?ghc_packages_list:Requires: %(echo %{ghc_packages_list} | sed -e "s/\([^ ]*\)-\([^ ]*\)/ghc-\1-devel = \2-%{release},/g")}
+Requires: %{name}-compiler = %{version}-%{release}
+%{?ghc_packages_list:Requires: %(echo %{ghc_packages_list} | sed -e "s/\([^ ]*\)-\([^ ]*\)/%{name}-\1-devel = \2-%{release},/g")}
 
 %description libraries
 This is a meta-package for all the development library packages in GHC
@@ -261,7 +241,7 @@ except the ghc library, which is installed by the toplevel ghc metapackage.
 
 
 %prep
-%setup -q -n %{name}-%{version} %{!?without_testsuite:-b2}
+%setup -q -n ghc-%{version} %{!?without_testsuite:-b2}
 
 # gen_contents_index: use absolute path for haddock
 %patch1 -p1 -b .orig
@@ -356,22 +336,10 @@ echo _smp_mflags is \'%{?_smp_mflags}\'
 # NB for future ghc versions maybe should hardcode max -j4 for all builds
 # Though apparently this does not affect 7.10
 MAKE_JOBS=$(echo %{?_smp_mflags} | sed -e "s/^-j//")
-%ifarch %{ix86} x86_64
-# hack to perserve the high "make -j" ghc ABI hashes for 7.8.4 koji/mock builds
-# (-j9 seems to be sufficient but not -j8)
-if [ "%{build_minimum_smp}" -le "8" ]; then
-  echo "** NB: ghc-7.8.4 needs to be built with 'make -j9' or higher to preserve the -j16 ABI hashes for F22/F23 i686 and x86_64 **"
-fi
-if [ -z "$MAKE_JOBS" -o "0$MAKE_JOBS" -le "%{build_minimum_smp}" ]; then
-    echo "Overriding 'make -j' SMP for Intel builds to preserve the ghc ABI hashes:"
-    MAKE_JOBS="%{build_minimum_smp}"
-fi
-%else
-# keep < 9 for all other archs
-if [ "0$MAKE_JOBS" -gt "8" ]; then
+# no more than make -j8 to avoid ABI problems
+if [ "${MAKE_JOBS:-0}" -gt "8" ]; then
   MAKE_JOBS=8
 fi
-%endif
 
 make ${MAKE_JOBS:+-j$MAKE_JOBS}
 
@@ -468,7 +436,7 @@ make test
 %endif
 
 
-%post compiler
+%post
 # Alas, GHC, Hugs, and nhc all come with different set of tools in
 # addition to a runFOO:
 #
@@ -486,7 +454,7 @@ update-alternatives --install %{_bindir}/runhaskell runhaskell \
 update-alternatives --install %{_bindir}/hsc2hs hsc2hs \
   %{_bindir}/hsc2hs-ghc 500
 
-%preun compiler
+%preun
 if [ "$1" = 0 ]; then
   update-alternatives --remove runhaskell %{_bindir}/runghc
   update-alternatives --remove hsc2hs     %{_bindir}/hsc2hs-ghc
@@ -494,22 +462,23 @@ fi
 
 
 %files
-
-%files compiler
-%doc ANNOUNCE LICENSE
 %{_bindir}/ghc
-%{_bindir}/ghc-%{version}
 %{_bindir}/ghc-pkg
-%{_bindir}/ghc-pkg-%{version}
 %{_bindir}/ghci
-%{_bindir}/ghci-%{version}
 %{_bindir}/hp2ps
 %{_bindir}/hpc
 %ghost %{_bindir}/hsc2hs
 %{_bindir}/hsc2hs-ghc
-%{_bindir}/runghc*
+%{_bindir}/runghc
 %ghost %{_bindir}/runhaskell
 %{_bindir}/runhaskell-ghc
+
+%files compiler
+%doc ANNOUNCE LICENSE
+%{_bindir}/ghc-%{version}
+%{_bindir}/ghc-pkg-%{version}
+%{_bindir}/ghci-%{version}
+%{_bindir}/runghc-%{version}
 %dir %{ghclibdir}/bin
 %{ghclibdir}/bin/ghc
 %{ghclibdir}/bin/ghc-pkg
@@ -570,6 +539,9 @@ fi
 
 
 %changelog
+* Sat Mar  7 2015 Jens Petersen <petersen@fedoraproject.org> - 7.8.4-1
+- initial ghc784, to parallel install with fedora ghc
+
 * Sun Mar  1 2015 Jens Petersen <petersen@fedoraproject.org>
 - use llvm for aarch64
 - fix build.mk BuildFlavour setup
