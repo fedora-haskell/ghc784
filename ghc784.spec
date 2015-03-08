@@ -29,11 +29,6 @@ Name: %{ghc_name}
 # part of haskell-platform
 # ghc must be rebuilt after a version bump to avoid ABI change problems
 Version: 7.8.4
-# Since library subpackages are versioned:
-# - release can only be reset if *all* library versions get bumped simultaneously
-#   (sometimes after a major release)
-# - minor release numbers for a branch should be incremented monotonically
-# xhtml moved from haskell-platform to ghc-7.8.3
 Release: 1%{?dist}
 Summary: Glasgow Haskell Compiler
 
@@ -351,11 +346,11 @@ for i in %{ghc_packages_list}; do
 name=$(echo $i | sed -e "s/\(.*\)-.*/\1/")
 ver=$(echo $i | sed -e "s/.*-\(.*\)/\1/")
 %ghc_gen_filelists $name $ver
-echo "%doc libraries/$name/LICENSE" >> ghc-$name.files
+echo "%doc libraries/$name/LICENSE" >> %{name}-$name.files
 done
 
 # ghc-base should own ghclibdir
-echo "%dir %{ghclibdir}" >> ghc-base.files
+echo "%dir %{ghclibdir}" >> %{name}-base.files
 
 %ghc_gen_filelists bin-package-db %{bin_package_db_ver}
 %ghc_gen_filelists ghc %{ghc_version_override}
@@ -363,24 +358,24 @@ echo "%dir %{ghclibdir}" >> ghc-base.files
 %ghc_gen_filelists integer-gmp %{integer_gmp_ver}
 
 %define merge_filelist()\
-cat ghc-%1.files >> ghc-%2.files\
-cat ghc-%1-devel.files >> ghc-%2-devel.files\
+cat %{name}-%1.files >> %{name}-%2.files\
+cat %{name}-%1-devel.files >> %{name}-%2-devel.files\
 cp -p libraries/%1/LICENSE libraries/LICENSE.%1\
-echo "%doc libraries/LICENSE.%1" >> ghc-%2.files
+echo "%doc libraries/LICENSE.%1" >> %{name}-%2.files
 
 %merge_filelist integer-gmp base
 %merge_filelist ghc-prim base
 %merge_filelist bin-package-db ghc
 
 # add rts libs
-echo "%dir %{ghclibdir}/rts-1.0" >> ghc-base.files
-ls %{buildroot}%{ghclibdir}/rts-1.0/libHS*.so >> ghc-base.files
+echo "%dir %{ghclibdir}/rts-1.0" >> %{name}-base.files
+ls %{buildroot}%{ghclibdir}/rts-1.0/libHS*.so >> %{name}-base.files
 
-sed -i -e "s|^%{buildroot}||g" ghc-base.files
+sed -i -e "s|^%{buildroot}||g" %{name}-base.files
 
-ls -d %{buildroot}%{ghclibdir}/rts-1.0/lib*.a  %{buildroot}%{ghclibdir}/package.conf.d/builtin_*.conf %{buildroot}%{ghclibdir}/include >> ghc-base-devel.files
+ls -d %{buildroot}%{ghclibdir}/rts-1.0/lib*.a  %{buildroot}%{ghclibdir}/package.conf.d/builtin_*.conf %{buildroot}%{ghclibdir}/include >> %{name}-base-devel.files
 
-sed -i -e "s|^%{buildroot}||g" ghc-base-devel.files
+sed -i -e "s|^%{buildroot}||g" %{name}-base-devel.files
 
 # these are handled as alternatives
 for i in hsc2hs runhaskell; do
