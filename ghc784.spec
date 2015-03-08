@@ -1,5 +1,5 @@
 # To bootstrap build a new version of ghc:
-%global ghc_bootstrapping 0
+#%%global ghc_bootstrapping 1
 
 %global without_testsuite 1
 
@@ -456,6 +456,7 @@ if [ "$1" = 0 ]; then
 fi
 
 
+# still conflicts with Fedora ghc-compiler
 %files
 %{_bindir}/ghc
 %{_bindir}/ghc-pkg
@@ -467,6 +468,7 @@ fi
 %{_bindir}/runghc
 %ghost %{_bindir}/runhaskell
 %{_bindir}/runhaskell-ghc
+%{_mandir}/man1/ghc.*
 
 %files compiler
 %doc ANNOUNCE LICENSE
@@ -493,7 +495,6 @@ fi
 %{ghclibdir}/settings
 %{ghclibdir}/template-hsc.h
 %{ghclibdir}/unlit
-%{_mandir}/man1/ghc.*
 %dir %{_docdir}/ghc
 %dir %{ghcdocbasedir}
 %if %{undefined without_haddock}
